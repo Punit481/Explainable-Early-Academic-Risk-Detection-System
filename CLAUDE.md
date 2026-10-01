@@ -142,3 +142,11 @@ docker compose down -v          # stop and delete all data
 - The api/web build stages install npm 11 because the lockfiles come from npm 11.
 - PostgreSQL's password is set only when its volume is first created; changing
   `POSTGRES_PASSWORD` later needs `docker compose down -v` (deletes data).
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push to main and every PR, as four parallel
+jobs: ml-service (`mvn test`), api (lint, build, unit, e2e against a PostgreSQL service
+container), web (lint, build, tests) and docker (`docker compose build`). The model
+export and `npm run screenshots` are not in CI. Validate the workflow locally with
+`docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest`.

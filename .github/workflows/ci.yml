@@ -1,0 +1,101 @@
+# Runs every test suite on each push to main and each pull request.
+# The four jobs run in parallel; the commit gets a green check only if all pass.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch cancels the run that is still going
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ml-service:
+    name: ml-service (Java vs Python checks)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml-service
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      # XGBoost4J's native library needs OpenMP on Linux
+      - run: sudo apt-get install -y --no-install-recommends libgomp1
+      # Every case in model/*/test_cases.json, SHAP values included
+      - run: mvn -B test
+
+  api:
+    name: api (lint, build, unit + e2e tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    # A real PostgreSQL for the e2e tests, only alive during this job
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: risk
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: risk
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U risk"
+          --health-interval 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://risk:ci-only-password@localhost:5432/risk
+      JWT_SECRET: ci-only-secret
+      ML_SERVICE_URL: http://localhost:8080 # unused: the e2e tests use a fake ml-service
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      # The lockfile is written by npm 11; npm 10 (bundled with Node 22) reads it differently
+      - run: npm install -g npm@11
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:e2e
+
+  web:
+    name: web (lint, type-check + build, component tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm install -g npm@11
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+
+  docker:
+    name: docker (all images build)
+    runs-on: ubuntu-latest
+    # docker-compose.yml refuses to start without these; build-only values
+    env:
+      POSTGRES_PASSWORD: ci-only-password
+      JWT_SECRET: ci-only-secret
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker compose build

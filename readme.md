@@ -1,5 +1,7 @@
 # Explainable Early Academic Risk Detection System
 
+[![CI](https://github.com/Punit481/Explainable-Early-Academic-Risk-Detection-System/actions/workflows/ci.yml/badge.svg)](https://github.com/Punit481/Explainable-Early-Academic-Risk-Detection-System/actions/workflows/ci.yml)
+
 A teacher dashboard that flags students at risk of failing a course, **explains every
 prediction**, and gets more accurate as the school year goes on. A teacher uploads a class
 as a CSV and sees each student's risk, the factors behind it (SHAP), an early-warning flag
@@ -150,7 +152,10 @@ Then:
 | api | `api/` | `npm test` (unit) and `npm run test:e2e` (needs PostgreSQL) |
 | web | `web/` | `npm test` (components) and `npm run screenshots` (browser walkthrough) |
 
-Setup details for each part are in [`CLAUDE.md`](CLAUDE.md).
+All of these except the export and the browser walkthrough also run on GitHub Actions
+for every push and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)),
+along with a check that every Docker image builds. Setup details for each part are in
+[`CLAUDE.md`](CLAUDE.md).
 
 ## Repository structure
 
