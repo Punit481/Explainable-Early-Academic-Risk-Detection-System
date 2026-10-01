@@ -21,7 +21,8 @@ dataset), being turned into a full-stack teacher dashboard.
   CSV upload, calls ml-service over REST.
 - **web/** — React + TypeScript dashboard. Class table with risk badges, student
   detail page with SHAP chart, what-if simulator, CSV upload.
-- **Docker Compose** to run everything together.
+- **Docker Compose** runs everything together; nginx (in the web image) serves the
+  React app and proxies `/api/*` to the api. Only port 8000 is published.
 
 ## Build order
 
@@ -29,7 +30,7 @@ dataset), being turned into a full-stack teacher dashboard.
 2. ml-service — **done**
 3. api — **done**
 4. web — **done**
-5. Docker + deploy
+5. Docker — **done** (local only; deploying online is a later decision)
 
 ## Working rules
 
@@ -72,8 +73,8 @@ mvn spring-boot:run    # serves POST /predict on port 8080
 NestJS 12, TypeORM 1.x, PostgreSQL 17 (in Docker). From the repo root:
 
 ```
-docker compose up -d                 # PostgreSQL on port 5432
-cd api && cp .env.example .env       # then set a real JWT_SECRET
+docker compose up -d postgres        # PostgreSQL on 127.0.0.1:5432
+cd api && cp .env.example .env       # use the POSTGRES_PASSWORD from the root .env
 npm test                             # unit tests
 npm run test:e2e                     # needs PostgreSQL; uses a fake ml-service
 npm run start:dev                    # serves on port 3000; needs ml-service on 8080
@@ -88,8 +89,10 @@ npm run start:dev                    # serves on port 3000; needs ml-service on 
 - TypeORM 1.x: `select` takes an object (`{ id: true }`), not an array.
 - npm 10.9 crashes installing this project (`Cannot read properties of null
   (reading 'edgesOut')`); use `npx npm@11 install` instead.
-- `synchronize: true` creates tables automatically; switch to migrations before
-  production.
+- Tables come only from migrations (`src/migrations/`), which run when the api
+  starts. After changing an entity: `npm run migration:generate --
+  src/migrations/<Name>` (needs PostgreSQL), check the SQL, add the class to
+  `src/migrations/index.ts`.
 
 ## web
 
@@ -107,3 +110,20 @@ npm run build    # type-check + production build
 - Colors with meaning live in `src/index.css` (light + dark): status colors for
   risk levels (always with icon + label), blue/red for SHAP bars (validated for
   color-blind safety). Don't reuse them for anything else.
+
+## Docker (whole stack)
+
+From the repo root, with a `.env` copied from `.env.example` (POSTGRES_PASSWORD, JWT_SECRET):
+
+```
+docker compose up -d --build    # http://localhost:8000
+docker compose logs -f api      # follow one service's logs
+docker compose down             # stop (data stays in the postgres-data volume)
+docker compose down -v          # stop and delete all data
+```
+
+- The ml-service image runs `mvn package`, so it only builds if all test cases pass.
+- XGBoost4J needs `libgomp1` on Linux (installed in both ml-service stages).
+- The api/web build stages install npm 11 because the lockfiles come from npm 11.
+- PostgreSQL's password is set only when its volume is first created; changing
+  `POSTGRES_PASSWORD` later needs `docker compose down -v` (deletes data).

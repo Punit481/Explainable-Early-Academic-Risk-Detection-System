@@ -4,6 +4,7 @@ import { APP_PIPE } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module.js';
 import { ClassesModule } from './classes/classes.module.js';
+import { migrations } from './migrations/index.js';
 import { StudentsModule } from './students/students.module.js';
 
 @Module({
@@ -16,9 +17,10 @@ import { StudentsModule } from './students/students.module.js';
         type: 'postgres',
         url: config.getOrThrow<string>('DATABASE_URL'),
         autoLoadEntities: true,
-        // Development only: creates/updates tables from the entity classes.
-        // Production should use migrations instead.
-        synchronize: true,
+        // Tables are created and changed only by migrations (src/migrations),
+        // which run automatically when the api starts.
+        migrations,
+        migrationsRun: true,
       }),
     }),
     AuthModule,

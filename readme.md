@@ -48,6 +48,26 @@ UCI Student Performance Dataset
 7. Risk Scoring
 8. Intervention Recommendation
 
+## Teacher Dashboard
+
+The trained models are served to a full-stack dashboard:
+
+- **ml-service** (Spring Boot): XGBoost via XGBoost4J and Isolation Forest via ONNX Runtime, with SHAP explanations
+- **api** (NestJS + PostgreSQL): teacher login, classes, CSV upload, what-if predictions
+- **web** (React + TypeScript): class risk table, SHAP chart per student, what-if simulator
+
+### Run it
+
+Requires Docker.
+
+```
+cp .env.example .env    # then replace both values, e.g. with: openssl rand -hex 32
+docker compose up -d --build
+```
+
+Open http://localhost:8000, create an account, create a class and upload
+`data/sample_class.csv`.
+
 ## Technologies
 
 - Python

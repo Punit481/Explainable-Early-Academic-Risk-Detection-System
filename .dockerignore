@@ -1,0 +1,5 @@
+# Build context for ml-service is the repo root; it only needs ml-service/ and model/
+*
+!ml-service/pom.xml
+!ml-service/src
+!model

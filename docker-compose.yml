@@ -1,16 +1,52 @@
-# Local development: PostgreSQL for the api.
-# Start with `docker compose up -d`. ml-service, api and web are added in step 5.
+# The whole system on one machine:  docker compose up --build  ->  http://localhost:8000
+# Needs a .env file next to this one (copy .env.example).
+#
+# Only "web" (nginx) is reachable from outside. It serves the React app and forwards
+# /api/* to the api; the api, ml-service and postgres talk over Docker's internal network.
 services:
   postgres:
     image: postgres:17
     environment:
       POSTGRES_USER: risk
-      POSTGRES_PASSWORD: risk
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: risk
+    # Reachable from this computer only (for `npm run start:dev` and the api tests), never from the network
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "risk"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  ml-service:
+    build:
+      context: . # repo root, because the image needs model/ as well as ml-service/
+      dockerfile: ml-service/Dockerfile
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgres://risk:${POSTGRES_PASSWORD}@postgres:5432/risk
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ML_SERVICE_URL: http://ml-service:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "8000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
 
 volumes:
   postgres-data:
