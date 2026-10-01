@@ -27,7 +27,7 @@ dataset), being turned into a full-stack teacher dashboard.
 
 1. Model export — **done**
 2. ml-service — **done**
-3. api
+3. api — **done**
 4. web
 5. Docker + deploy
 
@@ -66,3 +66,27 @@ mvn spring-boot:run    # serves POST /predict on port 8080
 - On macOS, XGBoost4J needs OpenMP from Homebrew (`brew install libomp`).
 - Spring Boot 4 uses Jackson 3: import `tools.jackson.databind.*`, not
   `com.fasterxml.jackson.databind.*` (annotations are still `com.fasterxml`).
+
+## api
+
+NestJS 12, TypeORM 1.x, PostgreSQL 17 (in Docker). From the repo root:
+
+```
+docker compose up -d                 # PostgreSQL on port 5432
+cd api && cp .env.example .env       # then set a real JWT_SECRET
+npm test                             # unit tests
+npm run test:e2e                     # needs PostgreSQL; uses a fake ml-service
+npm run start:dev                    # serves on port 3000; needs ml-service on 8080
+```
+
+- Endpoints: `POST /auth/register`, `POST /auth/login`, `GET|POST /classes`,
+  `GET /classes/:id`, `POST /classes/:id/upload` (multipart, field `file`),
+  `GET /students/:id`, `POST /students/:id/what-if`. All but `/auth/*` need
+  `Authorization: Bearer <token>`. Other teachers' data returns 404.
+- `data/sample_class.csv` is a ready-made class to upload (30 students).
+- ES-module project: local imports end in `.js` (e.g. `'./auth.module.js'`).
+- TypeORM 1.x: `select` takes an object (`{ id: true }`), not an array.
+- npm 10.9 crashes installing this project (`Cannot read properties of null
+  (reading 'edgesOut')`); use `npx npm@11 install` instead.
+- `synchronize: true` creates tables automatically; switch to migrations before
+  production.

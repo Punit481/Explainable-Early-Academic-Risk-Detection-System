@@ -5,3 +5,6 @@ node_modules/
 target/
 .env
 .claude/settings.local.json
+dist/
+*.tsbuildinfo
+coverage/
