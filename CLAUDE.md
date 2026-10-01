@@ -26,7 +26,7 @@ dataset), being turned into a full-stack teacher dashboard.
 ## Build order
 
 1. Model export — **done**
-2. ml-service
+2. ml-service — **done**
 3. api
 4. web
 5. Docker + deploy
@@ -52,3 +52,17 @@ conda run -n ml_project_py312 python export/export_models.py
 
 Expected output: XGBoost accuracy 0.924, recall 0.885, F1 0.885; ONNX matches
 scikit-learn on 100% of students; 40 of 395 anomalies.
+
+## ml-service
+
+Spring Boot 4.1, Java 21, XGBoost4J 3.4.0, ONNX Runtime 1.30. From `ml-service/`:
+
+```
+mvn test               # checks every case in model/test_cases.json
+mvn spring-boot:run    # serves POST /predict on port 8080
+```
+
+- Reads models from `../model` by default; set `MODEL_DIR` to override.
+- On macOS, XGBoost4J needs OpenMP from Homebrew (`brew install libomp`).
+- Spring Boot 4 uses Jackson 3: import `tools.jackson.databind.*`, not
+  `com.fasterxml.jackson.databind.*` (annotations are still `com.fasterxml`).
