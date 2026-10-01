@@ -101,6 +101,8 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      # XGBoost needs OpenMP; on macOS it comes from Homebrew (same as on the dev Mac)
+      - run: brew install libomp
       - run: pip install -r requirements.txt
       # Retrains every model with the pinned versions and rewrites model/ and data/
       - run: python export/export_models.py
