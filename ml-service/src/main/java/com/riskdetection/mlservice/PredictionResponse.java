@@ -4,6 +4,8 @@ import java.util.List;
 
 /** What POST /predict returns for one student. */
 public record PredictionResponse(
+        // Which models were used: after_period_2, after_period_1 or start_of_term
+        String stage,
         double riskProbability,
         double riskScore,
         String riskLevel,

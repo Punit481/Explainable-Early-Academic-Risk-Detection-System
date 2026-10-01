@@ -6,17 +6,22 @@ dataset), being turned into a full-stack teacher dashboard.
 ## Architecture
 
 - **notebooks/ + export/** — Python is used ONLY for training and exporting models.
-  `export/export_models.py` writes `model/`:
-  - `xgb_model.json` — XGBoost risk classifier
-  - `isolation_forest.onnx` — Isolation Forest anomaly detector
-  - `metadata.json` — feature order, categorical mappings, derived-feature formulas,
-    `maxAbsences`, risk thresholds, interventions
-  - `test_cases.json` — inputs with expected outputs, for verifying the Java service
-- **ml-service/** — Spring Boot (Java). Loads `xgb_model.json` with XGBoost4J and
-  `isolation_forest.onnx` with ONNX Runtime. Encodes input using `metadata.json`.
-  `POST /predict` returns `riskProbability`, `riskScore`, `riskLevel`
-  (Low <= 30, Medium <= 70, High), anomaly flag, intervention, and top SHAP factors
-  (XGBoost4J `predictContrib`). Must pass every case in `model/test_cases.json`.
+  `export/export_models.py` trains one model pair per **stage** of the school year:
+  `after_period_2` (G1+G2 known), `after_period_1` (G1 only), `start_of_term` (no
+  grades, no absences). It writes `model/`:
+  - `metadata.json` — categorical mappings, derived-feature formulas, `maxAbsences`,
+    each stage's `requires` + feature order, risk thresholds, interventions
+  - `metrics.json` — test-set results per stage (feeds the README)
+  - `<stage>/xgb_model.json` — XGBoost risk classifier
+  - `<stage>/isolation_forest.onnx` — Isolation Forest anomaly detector
+  - `<stage>/test_cases.json` — inputs with expected outputs incl. every SHAP value
+  It also writes the demo CSVs `data/sample_class*.csv` (test-set students only).
+- **ml-service/** — Spring Boot (Java). Loads every stage with XGBoost4J and ONNX
+  Runtime, picks the stage from which grades the input has, encodes input using
+  `metadata.json`. `POST /predict` returns `stage`, `riskProbability`, `riskScore`,
+  `riskLevel` (Low <= 30, Medium <= 70, High), anomaly flag, intervention, and top
+  SHAP factors (XGBoost4J `predictContrib`). Must pass every case in
+  `model/*/test_cases.json`, SHAP values included.
 - **api/** — NestJS (Node). Teacher login with JWT, students/classes in PostgreSQL,
   CSV upload, calls ml-service over REST.
 - **web/** — React + TypeScript dashboard. Class table with risk badges, student
@@ -51,15 +56,17 @@ Re-export the models from the repo root:
 conda run -n ml_project_py312 python export/export_models.py
 ```
 
-Expected output: XGBoost accuracy 0.924, recall 0.885, F1 0.885; ONNX matches
-scikit-learn on 100% of students; 40 of 395 anomalies.
+Expected output: after_period_2 accuracy 0.924 / recall 0.885 / AUC 0.961,
+after_period_1 0.81 / 0.692 / 0.923, start_of_term 0.684 / 0.423 / 0.698 (baseline
+accuracy 0.671); SHAP max difference 0.00e+00 vs the shap library; ONNX matches
+scikit-learn on 100%; 40 anomalies per stage. The env needs `shap` installed.
 
 ## ml-service
 
 Spring Boot 4.1, Java 21, XGBoost4J 3.4.0, ONNX Runtime 1.30. From `ml-service/`:
 
 ```
-mvn test               # checks every case in model/test_cases.json
+mvn test               # checks every case in model/*/test_cases.json (incl. SHAP)
 mvn spring-boot:run    # serves POST /predict on port 8080
 ```
 

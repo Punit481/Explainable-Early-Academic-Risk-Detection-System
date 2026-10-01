@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Turns one student's raw JSON fields into the 35 numbers the models expect,
- * doing exactly what the Python preprocessing did:
+ * Turns one student's raw JSON fields into the numbers a stage's models expect
+ * (in that stage's feature order), doing exactly what the Python preprocessing did:
  *  - text values become numbers using the saved mappings (e.g. Mjob "other" -> 2)
  *  - numbers are copied as they are
  *  - attendance, quiz_avg and trend are calculated from absences, G1 and G2
@@ -20,8 +20,7 @@ public class FeatureEncoder {
         this.metadata = metadata;
     }
 
-    public float[] encode(Map<String, Object> student) {
-        List<String> featureNames = metadata.features();
+    public float[] encode(Map<String, Object> student, List<String> featureNames) {
         float[] features = new float[featureNames.size()];
 
         for (int i = 0; i < featureNames.size(); i++) {
