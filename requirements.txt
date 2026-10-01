@@ -1,7 +1,20 @@
-pandas
-numpy
-matplotlib
-scikit-learn
-xgboost
-shap
-jupyter
+# Python 3.12. Exact versions, so retraining gives the same models as the ones in model/.
+#   python3.12 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt
+#   .venv/bin/python export/export_models.py
+
+# Training and export (export/export_models.py)
+numpy==2.5.3
+pandas==3.0.6
+scipy==1.18.1
+scikit-learn==1.9.1
+xgboost==3.4.1
+shap==0.52.0
+skl2onnx==1.20.0
+onnx==1.23.1
+onnxruntime==1.30.0
+
+# Research notebook (notebooks/Academic_Risk_Detection.ipynb)
+matplotlib==3.11.2
+seaborn==0.13.2
+jupyter==1.1.1

@@ -147,6 +147,12 @@ for stage in STAGES:
         X_stage.values[:1].astype(np.float32),
         target_opset={"": 15, "ai.onnx.ml": 3},
     )
+    # skl2onnx lists the opsets in a random order per run; sort them so re-exporting
+    # gives a byte-for-byte identical file (CI checks this)
+    opsets = sorted((o.domain, o.version) for o in onnx_model.opset_import)
+    del onnx_model.opset_import[:]
+    for domain, version in opsets:
+        onnx_model.opset_import.add(domain=domain, version=version)
     onnx_path = os.path.join(stage_dir, "isolation_forest.onnx")
     with open(onnx_path, "wb") as f:
         f.write(onnx_model.SerializeToString())

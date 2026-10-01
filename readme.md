@@ -143,6 +143,19 @@ Then:
    - `data/sample_class_start_of_term.csv`: no grades or absences yet
 3. Stop with `docker compose down`. Your data is kept; `down -v` deletes it.
 
+### Retrain the models
+
+Requires Python 3.12. `requirements.txt` pins exact versions, so retraining reproduces
+the committed models byte for byte (CI checks this on every push).
+
+```
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python export/export_models.py    # rewrites model/ and the demo CSVs
+```
+
+The research notebook runs in the same environment (`.venv/bin/jupyter notebook`).
+
 ### Development and tests
 
 | Part | Folder | Tests |
@@ -152,9 +165,10 @@ Then:
 | api | `api/` | `npm test` (unit) and `npm run test:e2e` (needs PostgreSQL) |
 | web | `web/` | `npm test` (components) and `npm run screenshots` (browser walkthrough) |
 
-All of these except the export and the browser walkthrough also run on GitHub Actions
-for every push and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)),
-along with a check that every Docker image builds. Setup details for each part are in
+All of these except the browser walkthrough also run on GitHub Actions for every push
+and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)), along with
+checks that re-exporting reproduces the committed models, that the notebook still runs,
+and that every Docker image builds. Setup details for each part are in
 [`CLAUDE.md`](CLAUDE.md).
 
 ## Repository structure

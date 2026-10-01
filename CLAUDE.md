@@ -47,13 +47,22 @@ dataset), being turned into a full-stack teacher dashboard.
 
 ## Python environment
 
-Use the conda env `ml_project_py312` (Python 3.12). The older `ml_project` env
-(Python 3.10) is broken: its scipy build fails to load on this macOS.
+Python 3.12 with the exact versions in `requirements.txt` (re-exporting must reproduce
+`model/` byte for byte; CI fails otherwise). Set up a `.venv` (git-ignored):
+
+```
+/opt/anaconda3/envs/ml_project_py312/bin/python -m venv .venv   # any Python 3.12
+.venv/bin/pip install -r requirements.txt
+```
+
+The conda env `ml_project_py312` also works. The older `ml_project` env (Python 3.10) is
+broken: its scipy build fails to load on this macOS. If you upgrade a pinned library,
+re-export and commit the changed `model/` files in the same commit.
 
 Re-export the models from the repo root:
 
 ```
-conda run -n ml_project_py312 python export/export_models.py
+.venv/bin/python export/export_models.py
 ```
 
 Expected output (test AUC / cross-validated AUC): after_period_2 0.97 / 0.964
@@ -145,8 +154,10 @@ docker compose down -v          # stop and delete all data
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push to main and every PR, as four parallel
+`.github/workflows/ci.yml` runs on every push to main and every PR, as five parallel
 jobs: ml-service (`mvn test`), api (lint, build, unit, e2e against a PostgreSQL service
-container), web (lint, build, tests) and docker (`docker compose build`). The model
-export and `npm run screenshots` are not in CI. Validate the workflow locally with
+container), web (lint, build, tests), model-export (re-export must leave `model/` and
+`data/` unchanged; the notebook must run) and docker (`docker compose build`).
+`npm run screenshots` is not in CI. Pushing workflow changes needs the gh token's
+`workflow` scope (already added). Validate the workflow locally with
 `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest`.
