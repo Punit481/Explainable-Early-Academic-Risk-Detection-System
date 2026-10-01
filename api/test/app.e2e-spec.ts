@@ -70,9 +70,13 @@ describe('api (e2e)', () => {
     it('logs in with the right password only', async () => {
       await api.post('/auth/login').send({ email: teacherA.email, password: 'wrong-password' }).expect(401);
 
-      tokenA = (await api.post('/auth/login').send(teacherA).expect(200)).body.accessToken;
+      const res = await api.post('/auth/login').send(teacherA).expect(200);
+      expect(res.body).toEqual({
+        accessToken: expect.any(String),
+        teacher: { name: 'Teacher A', email: teacherA.email },
+      });
+      tokenA = res.body.accessToken;
       tokenB = (await api.post('/auth/login').send(teacherB).expect(200)).body.accessToken;
-      expect(tokenA).toEqual(expect.any(String));
     });
 
     it('rejects requests without a valid token', async () => {

@@ -31,6 +31,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
     const accessToken = await this.jwt.signAsync({ sub: teacher.id });
-    return { accessToken };
+    return { accessToken, teacher: { name: teacher.name, email: teacher.email } };
   }
 }

@@ -28,7 +28,7 @@ dataset), being turned into a full-stack teacher dashboard.
 1. Model export — **done**
 2. ml-service — **done**
 3. api — **done**
-4. web
+4. web — **done**
 5. Docker + deploy
 
 ## Working rules
@@ -90,3 +90,20 @@ npm run start:dev                    # serves on port 3000; needs ml-service on 
   (reading 'edgesOut')`); use `npx npm@11 install` instead.
 - `synchronize: true` creates tables automatically; switch to migrations before
   production.
+
+## web
+
+Vite 8, React 19, TypeScript, react-router 7, Recharts, Tailwind CSS 4. From `web/`:
+
+```
+npm run dev      # http://localhost:5173; needs the api on 3000 (and ml-service on 8080)
+npm test         # component tests (Vitest + Testing Library)
+npm run build    # type-check + production build
+```
+
+- Vite proxies `/api/*` to `localhost:3000` (prefix stripped), so no CORS is needed.
+- react-router is on 7.x because 8.x needs Node >= 22.22 (this machine has 22.17).
+- Code style here: no semicolons, single quotes (the Vite template's style).
+- Colors with meaning live in `src/index.css` (light + dark): status colors for
+  risk levels (always with icon + label), blue/red for SHAP bars (validated for
+  color-blind safety). Don't reuse them for anything else.

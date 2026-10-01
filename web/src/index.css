@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+/*
+ * Colors with a meaning, used by the badges and charts.
+ * Risk levels use fixed status colors and always come with an icon + label.
+ * SHAP bars: red = raises risk, blue = lowers risk (checked for color-blind safety).
+ */
+:root {
+  --status-low: #0ca30c;
+  --status-medium: #fab219;
+  --status-high: #d03b3b;
+  --status-warning: #ec835a;
+  --shap-up: #e34948;
+  --shap-down: #2a78d6;
+  --chart-grid: #e7e6e2;
+  --chart-text: #52514e;
+  --chart-tooltip-bg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --shap-up: #e66767;
+    --shap-down: #3987e5;
+    --chart-grid: #383835;
+    --chart-text: #c3c2b7;
+    --chart-tooltip-bg: #262624;
+  }
+}
+
+body {
+  @apply bg-stone-50 text-stone-900 antialiased dark:bg-stone-900 dark:text-stone-100;
+}
