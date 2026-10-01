@@ -4,6 +4,7 @@ import { api, type StudentRow } from '../api'
 import { CsvUpload } from '../components/CsvUpload'
 import { Card } from '../components/Layout'
 import { EarlyWarningBadge, RiskBadge } from '../components/RiskBadge'
+import { STAGE_LABELS } from '../features'
 import { useLoad } from '../useLoad'
 
 const FILTERS = ['All', 'High', 'Medium', 'Low', 'Early warning'] as const
@@ -42,7 +43,8 @@ export function ClassPage() {
       <Card title="Add students">
         <p className="mb-3 text-sm text-stone-600 dark:text-stone-300">
           CSV with a <code>name</code> column plus the dataset columns (school, sex, age, …, absences, G1, G2).
-          Separated by <code>;</code> or <code>,</code>.
+          Separated by <code>;</code> or <code>,</code>. Early in the term, leave out the grades (and absences):
+          the dashboard then uses a model trained for that point in the year.
         </p>
         <CsvUpload classId={classId} onUploaded={reload} />
       </Card>
@@ -70,12 +72,13 @@ export function ClassPage() {
           <p className="text-sm text-stone-600 dark:text-stone-300">No students yet. Upload a CSV above.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-b border-stone-200 text-left text-stone-600 dark:border-stone-700 dark:text-stone-300">
                   <th className="py-2 pr-4 font-medium">Student</th>
                   <th className="py-2 pr-4 text-right font-medium">Risk score</th>
                   <th className="py-2 pr-4 font-medium">Risk level</th>
+                  <th className="py-2 pr-4 font-medium">Based on</th>
                   <th className="py-2 pr-4 font-medium">Recommended action</th>
                 </tr>
               </thead>
@@ -93,6 +96,9 @@ export function ClassPage() {
                         <RiskBadge level={s.riskLevel} />
                         {s.anomaly && <EarlyWarningBadge />}
                       </div>
+                    </td>
+                    <td className="py-2 pr-4 whitespace-nowrap text-stone-600 dark:text-stone-300">
+                      {STAGE_LABELS[s.stage]}
                     </td>
                     <td className="py-2 pr-4 text-stone-700 dark:text-stone-200">{s.intervention}</td>
                   </tr>

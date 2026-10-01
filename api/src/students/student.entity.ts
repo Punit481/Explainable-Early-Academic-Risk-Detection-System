@@ -21,7 +21,11 @@ export class Student {
   @Column({ type: 'jsonb' })
   features: StudentFeatures;
 
-  // Latest prediction from ml-service
+  // Latest prediction from ml-service.
+  // stage = which models were used: after_period_2, after_period_1 or start_of_term
+  @Column()
+  stage: string;
+
   @Column({ type: 'double precision' })
   riskProbability: number;
 

@@ -14,6 +14,7 @@ export interface ShapFactor {
 
 /** What ml-service's POST /predict returns. */
 export interface Prediction {
+  stage: string;
   riskProbability: number;
   riskScore: number;
   riskLevel: string;

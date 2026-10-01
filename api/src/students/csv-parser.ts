@@ -13,6 +13,8 @@ export interface CsvStudent {
  * Reads a class CSV: a "name" column plus the dataset columns (school, sex, age, ..., G1, G2).
  * Accepts ";" (like the UCI dataset file) or "," as the separator.
  * Number-looking values become numbers, everything else stays text.
+ * Blank cells are left out (e.g. no G1/G2 yet early in the term), so ml-service
+ * picks the model that fits the information available.
  */
 export function parseStudentCsv(csvText: string): CsvStudent[] {
   const header = csvText.split('\n', 1)[0];
@@ -36,8 +38,9 @@ export function parseStudentCsv(csvText: string): CsvStudent[] {
     const { name, ...columns } = record;
     const features: StudentFeatures = {};
     for (const [column, value] of Object.entries(columns)) {
+      if (value === '') continue;
       const number = Number(value);
-      features[column] = value !== '' && !Number.isNaN(number) ? number : value;
+      features[column] = Number.isNaN(number) ? value : number;
     }
     return { line: index + 2, name, features };
   });

@@ -1,6 +1,6 @@
 import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { ShapFactor } from '../api'
-import { featureLabel } from '../features'
+import { shortFeatureLabel } from '../features'
 
 interface Row {
   label: string
@@ -14,7 +14,7 @@ interface Row {
 export function ShapChart({ factors }: { factors: ShapFactor[] }) {
   const rows: Row[] = factors.map((f) => ({
     // Short label for the axis, e.g. "Second-period grade = 5" (no "(0–20)" hint)
-    label: `${featureLabel(f.feature).replace(/\s*\(.*\)$/, '')} = ${f.value}`,
+    label: `${shortFeatureLabel(f.feature)} = ${f.value}`,
     contribution: f.contribution,
   }))
   const { max, ticks } = symmetricTicks(Math.max(...rows.map((r) => Math.abs(r.contribution))))

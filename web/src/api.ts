@@ -2,6 +2,8 @@
 // In development Vite forwards /api/... to the api (see vite.config.ts).
 
 export type RiskLevel = 'Low' | 'Medium' | 'High'
+// Which models made the prediction, depending on which grades are known
+export type Stage = 'after_period_2' | 'after_period_1' | 'start_of_term'
 export type StudentFeatures = Record<string, string | number>
 
 export interface ShapFactor {
@@ -12,6 +14,7 @@ export interface ShapFactor {
 }
 
 export interface Prediction {
+  stage: Stage
   riskProbability: number
   riskScore: number
   riskLevel: RiskLevel
@@ -28,7 +31,7 @@ export interface Student extends Prediction {
   predictedAt: string
 }
 
-export type StudentRow = Pick<Student, 'id' | 'name' | 'riskScore' | 'riskLevel' | 'anomaly' | 'intervention'>
+export type StudentRow = Pick<Student, 'id' | 'name' | 'stage' | 'riskScore' | 'riskLevel' | 'anomaly' | 'intervention'>
 
 export interface ClassSummary {
   id: number

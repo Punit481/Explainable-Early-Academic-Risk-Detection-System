@@ -109,11 +109,17 @@ Vite 8, React 19, TypeScript, react-router 7, Recharts, Tailwind CSS 4. From `we
 npm run dev      # http://localhost:5173; needs the api on 3000 (and ml-service on 8080)
 npm test         # component tests (Vitest + Testing Library)
 npm run build    # type-check + production build
+npm run screenshots  # needs the Docker stack: clicks through, checks, saves figures/dashboard/*.png
 ```
 
 - Vite proxies `/api/*` to `localhost:3000` (prefix stripped), so no CORS is needed.
 - react-router is on 7.x because 8.x needs Node >= 22.22 (this machine has 22.17).
-- Code style here: no semicolons, single quotes (the Vite template's style).
+- Code style here: no semicolons, single quotes (the Vite template's style). There is
+  no Prettier in web/; if formatting, use `--no-semi --single-quote --print-width 120`.
+- `playwright-core` is pinned to 1.56.1 to match the Chromium build cached on this Mac
+  (`npx playwright-core install chromium` on a new machine).
+- Students show which stage predicted them; the what-if panel treats missing grades
+  as "not known yet" and fills absences = 0 when G1 is set (that model needs both).
 - Colors with meaning live in `src/index.css` (light + dark): status colors for
   risk levels (always with icon + label), blue/red for SHAP bars (validated for
   color-blind safety). Don't reuse them for anything else.

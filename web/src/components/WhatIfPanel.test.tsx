@@ -8,6 +8,7 @@ const student: Student = {
   name: 'Isha Gupta',
   classroomId: 2,
   features: { G1: 6, G2: 5, absences: 6, studytime: 2, goout: 3, schoolsup: 'no', paid: 'no' },
+  stage: 'after_period_2',
   riskProbability: 0.9992,
   riskScore: 99.92,
   riskLevel: 'High',
@@ -24,6 +25,7 @@ describe('WhatIfPanel', () => {
 
   it('sends only the changed fields and shows the score before and after', async () => {
     vi.spyOn(api, 'whatIf').mockResolvedValue({
+      stage: 'after_period_2',
       riskProbability: 0.342,
       riskScore: 34.2,
       riskLevel: 'Medium',
@@ -46,6 +48,7 @@ describe('WhatIfPanel', () => {
 
   it('does not call the api until something changes, and reset clears the result', async () => {
     const whatIf = vi.spyOn(api, 'whatIf').mockResolvedValue({
+      stage: 'after_period_2',
       riskProbability: 0.5,
       riskScore: 50,
       riskLevel: 'Medium',
@@ -62,5 +65,39 @@ describe('WhatIfPanel', () => {
 
     fireEvent.click(screen.getByText('Reset to real values'))
     expect(screen.queryByTestId('what-if-result')).not.toBeInTheDocument()
+  })
+
+  it('early in the term: grades start as not known, and setting G1 switches model', async () => {
+    const earlyStudent: Student = {
+      ...student,
+      features: { studytime: 2, goout: 3, schoolsup: 'no', paid: 'no' },
+      stage: 'start_of_term',
+      riskScore: 45,
+      riskLevel: 'Medium',
+    }
+    vi.spyOn(api, 'whatIf').mockResolvedValue({
+      stage: 'after_period_1',
+      riskProbability: 0.8,
+      riskScore: 80,
+      riskLevel: 'High',
+      anomaly: false,
+      intervention: 'Immediate counseling & mentoring',
+      topFactors: [],
+    })
+    render(<WhatIfPanel student={earlyStudent} />)
+
+    expect(screen.getAllByText('not known yet')).toHaveLength(3) // G1, G2, absences
+    const [g1, g2, absences] = screen.getAllByRole('slider')
+    expect(g2).toBeDisabled()
+    expect(absences).toBeDisabled()
+
+    fireEvent.change(g1, { target: { value: '8' } })
+
+    expect(await screen.findByText('Now predicted from: Period 1 grade')).toBeInTheDocument()
+    // The model that uses G1 also needs absences, so they are filled in as 0 (and shown)
+    expect(api.whatIf).toHaveBeenCalledWith(10, { G1: 8, absences: 0 })
+    expect(g2).toBeEnabled()
+    expect(absences).toBeEnabled()
+    expect(screen.getAllByText('not known yet')).toHaveLength(1) // only G2 now
   })
 })

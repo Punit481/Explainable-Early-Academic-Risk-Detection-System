@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, type Prediction, type Student, type StudentFeatures } from '../api'
-import { featureLabel, WHAT_IF_FIELDS } from '../features'
+import { featureLabel, shortFeatureLabel, STAGE_LABELS, WHAT_IF_FIELDS } from '../features'
 import { RiskBadge } from './RiskBadge'
 import { ShapChart } from './ShapChart'
 
@@ -43,6 +43,10 @@ export function WhatIfPanel({ student }: { student: Student }) {
     } else {
       next[name] = value
     }
+    // The models that use G1 also need absences: assume 0 (shown as a change the teacher can adjust)
+    if (name === 'G1' && valueOf('absences') === undefined) {
+      next.absences = 0
+    }
     updateChanges(next)
   }
 
@@ -53,43 +57,61 @@ export function WhatIfPanel({ student }: { student: Student }) {
     }
   }
 
-  const valueOf = (name: string) => changes[name] ?? student.features[name]
+  // undefined = not known yet (e.g. no grades early in the term)
+  const valueOf = (name: string): string | number | undefined => changes[name] ?? student.features[name]
 
   return (
     <div>
       <div className="grid gap-4 sm:grid-cols-2">
-        {WHAT_IF_FIELDS.map((field) => (
-          <label key={field.name} className="block text-sm">
-            <span className="flex justify-between gap-2">
-              <span>{featureLabel(field.name)}</span>
-              <span className={`tabular-nums ${field.name in changes ? 'font-semibold' : ''}`}>
-                {valueOf(field.name)}
+        {WHAT_IF_FIELDS.map((field) => {
+          const value = valueOf(field.name)
+          const needs = field.kind === 'range' ? field.needs : undefined
+          const blocked = needs !== undefined && valueOf(needs) === undefined
+          return (
+            <label key={field.name} className={`block text-sm ${blocked ? 'opacity-50' : ''}`}>
+              <span className="flex justify-between gap-2">
+                <span>{featureLabel(field.name)}</span>
+                {value === undefined ? (
+                  <span className="shrink-0 text-xs whitespace-nowrap text-stone-500 dark:text-stone-400">
+                    not known yet
+                  </span>
+                ) : (
+                  <span className={`shrink-0 tabular-nums ${field.name in changes ? 'font-semibold' : ''}`}>
+                    {value}
+                  </span>
+                )}
               </span>
-            </span>
-            {field.kind === 'range' ? (
-              <input
-                type="range"
-                min={field.min}
-                max={field.max}
-                value={valueOf(field.name)}
-                onChange={(e) => setField(field.name, Number(e.target.value))}
-                className="mt-1 w-full accent-stone-700 dark:accent-stone-300"
-              />
-            ) : (
-              <select
-                value={valueOf(field.name)}
-                onChange={(e) => setField(field.name, e.target.value)}
-                className="mt-1 w-full rounded-md border border-stone-300 bg-white px-2 py-1 dark:border-stone-600 dark:bg-stone-800"
-              >
-                <option value="yes">yes</option>
-                <option value="no">no</option>
-              </select>
-            )}
-            {field.kind === 'range' && field.hint && (
-              <span className="text-xs text-stone-500 dark:text-stone-400">{field.hint}</span>
-            )}
-          </label>
-        ))}
+              {field.kind === 'range' ? (
+                <input
+                  type="range"
+                  min={field.min}
+                  max={field.max}
+                  value={value ?? field.start ?? field.min}
+                  disabled={blocked}
+                  onChange={(e) => setField(field.name, Number(e.target.value))}
+                  className="mt-1 w-full accent-stone-700 dark:accent-stone-300"
+                />
+              ) : (
+                <select
+                  value={valueOf(field.name)}
+                  onChange={(e) => setField(field.name, e.target.value)}
+                  className="mt-1 w-full rounded-md border border-stone-300 bg-white px-2 py-1 dark:border-stone-600 dark:bg-stone-800"
+                >
+                  <option value="yes">yes</option>
+                  <option value="no">no</option>
+                </select>
+              )}
+              {blocked ? (
+                <span className="text-xs text-stone-500 dark:text-stone-400">
+                  {`Set the ${shortFeatureLabel(needs).toLowerCase()} first`}
+                </span>
+              ) : (
+                field.kind === 'range' &&
+                field.hint && <span className="text-xs text-stone-500 dark:text-stone-400">{field.hint}</span>
+              )}
+            </label>
+          )
+        })}
       </div>
 
       <div className="mt-5 border-t border-stone-200 pt-4 dark:border-stone-700">
@@ -115,17 +137,18 @@ export function WhatIfPanel({ student }: { student: Student }) {
               </span>
             </div>
             <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">{result.intervention}</p>
+            {result.stage !== student.stage && (
+              <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
+                Now predicted from: {STAGE_LABELS[result.stage]}
+              </p>
+            )}
             <div className="mt-4">
               <ShapChart factors={result.topFactors} />
             </div>
           </div>
         )}
         {hasChanges && (
-          <button
-            type="button"
-            onClick={() => updateChanges({})}
-            className="mt-3 text-sm underline underline-offset-2"
-          >
+          <button type="button" onClick={() => updateChanges({})} className="mt-3 text-sm underline underline-offset-2">
             Reset to real values
           </button>
         )}

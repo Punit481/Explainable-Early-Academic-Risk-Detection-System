@@ -19,10 +19,10 @@ describe('parseStudentCsv', () => {
     ]);
   });
 
-  it('keeps empty values as empty text so ml-service can reject them', () => {
-    const csv = 'name,G2\nRavi,\n';
+  it('leaves out blank cells, e.g. grades not known yet', () => {
+    const csv = 'name,G1,G2,age\nRavi,11,,16\n';
 
-    expect(parseStudentCsv(csv)[0].features).toEqual({ G2: '' });
+    expect(parseStudentCsv(csv)[0].features).toEqual({ G1: 11, age: 16 });
   });
 
   it('rejects a file without a name column', () => {

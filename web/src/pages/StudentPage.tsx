@@ -4,7 +4,7 @@ import { Card } from '../components/Layout'
 import { EarlyWarningBadge, RiskBadge } from '../components/RiskBadge'
 import { ShapChart } from '../components/ShapChart'
 import { WhatIfPanel } from '../components/WhatIfPanel'
-import { featureLabel } from '../features'
+import { featureLabel, STAGE_LABELS } from '../features'
 import { useLoad } from '../useLoad'
 
 export function StudentPage() {
@@ -38,14 +38,19 @@ export function StudentPage() {
             {student.anomaly && <EarlyWarningBadge />}
           </div>
         </div>
-        <p className="mt-4">
+        <p className="mt-4 text-sm text-stone-600 dark:text-stone-300">
+          Based on: <span className="font-medium text-stone-900 dark:text-stone-100">{STAGE_LABELS[student.stage]}</span>
+          {student.stage !== 'after_period_2' &&
+            '. Predictions made before both period grades are known are less certain; upload newer data as grades come in.'}
+        </p>
+        <p className="mt-2">
           <span className="text-sm text-stone-600 dark:text-stone-300">Recommended action: </span>
           <span className="font-medium">{student.intervention}</span>
         </p>
         {student.anomaly && (
           <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">
-            Early warning: this student's overall pattern is unusual compared with the rest of the dataset, even if
-            their grades look fine. Worth a closer look.
+            Early warning: this student's overall pattern is unusual compared with other students, whatever their
+            risk score. Worth a closer look.
           </p>
         )}
       </Card>

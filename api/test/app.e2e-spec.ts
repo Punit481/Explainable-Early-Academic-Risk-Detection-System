@@ -9,20 +9,26 @@ import { InvalidStudentDataError, MlClient, Prediction, StudentFeatures } from '
  * with a fake ml-service so the tests don't need Java running.
  */
 
-// Fake ml-service: risk score depends only on G2 (G2 = 0 -> 100, G2 = 20 -> 0)
+// Fake ml-service: picks the stage from the grades like the real one does, and the risk
+// score depends only on the latest grade (0 -> 100, 20 -> 0; no grades -> 50)
 const fakeMlClient = {
   async predict(features: StudentFeatures): Promise<Prediction> {
-    if (typeof features.G2 !== 'number') {
-      throw new InvalidStudentDataError('Missing field: G2');
+    for (const grade of ['G1', 'G2']) {
+      if (grade in features && typeof features[grade] !== 'number') {
+        throw new InvalidStudentDataError(`Field ${grade} must be a number`);
+      }
     }
-    const riskScore = 100 - features.G2 * 5;
+    const stage = 'G2' in features ? 'after_period_2' : 'G1' in features ? 'after_period_1' : 'start_of_term';
+    const latestGrade = (features.G2 ?? features.G1) as number | undefined;
+    const riskScore = latestGrade === undefined ? 50 : 100 - latestGrade * 5;
     return {
+      stage,
       riskProbability: riskScore / 100,
       riskScore,
       riskLevel: riskScore <= 30 ? 'Low' : riskScore <= 70 ? 'Medium' : 'High',
       anomaly: false,
       intervention: 'test intervention',
-      topFactors: [{ feature: 'G2', value: features.G2, contribution: 1, effect: 'increases risk' }],
+      topFactors: [{ feature: 'G2', value: latestGrade ?? 'none', contribution: 1, effect: 'increases risk' }],
     };
   },
 };
@@ -94,7 +100,8 @@ describe('api (e2e)', () => {
     });
 
     it('imports valid rows and reports invalid ones', async () => {
-      const csv = 'name;G1;G2\n"Low Risk";15;18\n"High Risk";5;4\n"Missing G2";10;\n';
+      // "First Grade Only" has a blank G2: valid, predicted with the after-period-1 model
+      const csv = 'name;G1;G2\n"Low Risk";15;18\n"High Risk";5;4\n"First Grade Only";10;\n"Bad Grade";abc;12\n';
 
       const res = await api
         .post(`/classes/${classId}/upload`)
@@ -102,7 +109,7 @@ describe('api (e2e)', () => {
         .attach('file', Buffer.from(csv), 'class.csv')
         .expect(201);
 
-      expect(res.body).toEqual({ imported: 2, errors: [{ line: 4, message: 'Missing field: G2' }] });
+      expect(res.body).toEqual({ imported: 3, errors: [{ line: 5, message: 'Field G1 must be a number' }] });
     });
 
     it('rejects an upload without a file or without a name column', async () => {
@@ -114,11 +121,15 @@ describe('api (e2e)', () => {
         .expect(400);
     });
 
-    it('lists the class students highest risk first', async () => {
+    it('lists the class students highest risk first, with the stage used', async () => {
       const res = await api.get(`/classes/${classId}`).auth(tokenA, { type: 'bearer' }).expect(200);
 
       expect(res.body.name).toBe('10-A');
-      expect(res.body.students.map((s: { name: string }) => s.name)).toEqual(['High Risk', 'Low Risk']);
+      expect(res.body.students.map((s: { name: string; stage: string }) => [s.name, s.stage])).toEqual([
+        ['High Risk', 'after_period_2'],
+        ['First Grade Only', 'after_period_1'],
+        ['Low Risk', 'after_period_2'],
+      ]);
       expect(res.body.students[0]).toMatchObject({ riskScore: 80, riskLevel: 'High' });
       studentId = res.body.students[0].id;
     });
@@ -126,7 +137,7 @@ describe('api (e2e)', () => {
     it('counts students per risk level', async () => {
       const res = await api.get('/classes').auth(tokenA, { type: 'bearer' }).expect(200);
 
-      expect(res.body).toEqual([{ id: classId, name: '10-A', riskCounts: { Low: 1, Medium: 0, High: 1 } }]);
+      expect(res.body).toEqual([{ id: classId, name: '10-A', riskCounts: { Low: 1, Medium: 1, High: 1 } }]);
     });
   });
 

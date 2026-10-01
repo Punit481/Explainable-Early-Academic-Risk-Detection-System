@@ -21,7 +21,15 @@ export class StudentsService {
   /** Students of one class for the dashboard table, highest risk first. */
   findByClass(classroomId: number) {
     return this.students.find({
-      select: { id: true, name: true, riskScore: true, riskLevel: true, anomaly: true, intervention: true },
+      select: {
+        id: true,
+        name: true,
+        stage: true,
+        riskScore: true,
+        riskLevel: true,
+        anomaly: true,
+        intervention: true,
+      },
       where: { classroomId },
       order: { riskScore: 'DESC' },
     });

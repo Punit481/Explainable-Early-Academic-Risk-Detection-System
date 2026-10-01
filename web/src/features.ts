@@ -1,3 +1,5 @@
+import type { Stage } from './api'
+
 // Plain-English names for the model's features (UCI Student Performance dataset),
 // so teachers see "Second-period grade" instead of "G2".
 
@@ -43,15 +45,31 @@ export function featureLabel(name: string): string {
   return FEATURE_LABELS[name] ?? name
 }
 
-/** The fields the what-if simulator lets a teacher change: things they can influence or anticipate. */
+/** The label without its scale hint: "Second-period grade (0–20)" -> "Second-period grade" */
+export function shortFeatureLabel(name: string): string {
+  return featureLabel(name).replace(/\s*\(.*\)$/, '')
+}
+
+/** What each stage's model knows about the student (see export/export_models.py). */
+export const STAGE_LABELS: Record<Stage, string> = {
+  after_period_2: 'Period 1 & 2 grades',
+  after_period_1: 'Period 1 grade',
+  start_of_term: 'No grades yet',
+}
+
+/**
+ * The fields the what-if simulator lets a teacher change: things they can influence or anticipate.
+ * start: where the slider starts when the value isn't known yet (e.g. no grades early in the term).
+ * needs: a field that must be known first (the models only use G2 and absences once G1 is known).
+ */
 export type WhatIfField =
-  | { name: string; kind: 'range'; min: number; max: number; hint?: string }
+  | { name: string; kind: 'range'; min: number; max: number; start?: number; needs?: string; hint?: string }
   | { name: string; kind: 'yesno' }
 
 export const WHAT_IF_FIELDS: WhatIfField[] = [
-  { name: 'G1', kind: 'range', min: 0, max: 20 },
-  { name: 'G2', kind: 'range', min: 0, max: 20 },
-  { name: 'absences', kind: 'range', min: 0, max: 75 },
+  { name: 'G1', kind: 'range', min: 0, max: 20, start: 10 },
+  { name: 'G2', kind: 'range', min: 0, max: 20, start: 10, needs: 'G1' },
+  { name: 'absences', kind: 'range', min: 0, max: 75, needs: 'G1' },
   { name: 'studytime', kind: 'range', min: 1, max: 4, hint: '1: <2h · 2: 2–5h · 3: 5–10h · 4: >10h' },
   { name: 'goout', kind: 'range', min: 1, max: 5, hint: '1: very low · 5: very high' },
   { name: 'schoolsup', kind: 'yesno' },
