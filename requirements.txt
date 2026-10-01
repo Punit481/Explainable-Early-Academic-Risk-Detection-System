@@ -1,4 +1,6 @@
-# Python 3.12. Exact versions, so retraining gives the same models as the ones in model/.
+# Python 3.12. Exact versions, so retraining gives the same models as the ones in model/
+# on macOS with Apple Silicon (where they were built; CI checks this). On Linux or Windows
+# XGBoost's random sampling draws different numbers, so the models differ slightly.
 #   python3.12 -m venv .venv
 #   .venv/bin/pip install -r requirements.txt
 #   .venv/bin/python export/export_models.py

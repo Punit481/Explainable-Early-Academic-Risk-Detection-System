@@ -145,8 +145,11 @@ Then:
 
 ### Retrain the models
 
-Requires Python 3.12. `requirements.txt` pins exact versions, so retraining reproduces
-the committed models byte for byte (CI checks this on every push).
+Requires Python 3.12. `requirements.txt` pins exact versions, so retraining on a Mac
+with Apple Silicon reproduces the committed models byte for byte (CI checks this on every
+push). On Linux or Windows the models come out slightly different: XGBoost's random
+sampling uses the operating system's C++ library, which draws different numbers from the
+same seed.
 
 ```
 python3.12 -m venv .venv

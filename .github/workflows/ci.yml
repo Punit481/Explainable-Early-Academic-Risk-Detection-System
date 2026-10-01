@@ -91,7 +91,10 @@ jobs:
 
   model-export:
     name: model export (committed models match the code)
-    runs-on: ubuntu-latest
+    # macOS on Apple Silicon, like the machine that built model/: XGBoost's random
+    # sampling draws different numbers on Linux (different C++ standard library),
+    # so only the same platform can reproduce the models byte for byte
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

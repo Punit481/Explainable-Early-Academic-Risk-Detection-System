@@ -156,8 +156,9 @@ docker compose down -v          # stop and delete all data
 
 `.github/workflows/ci.yml` runs on every push to main and every PR, as five parallel
 jobs: ml-service (`mvn test`), api (lint, build, unit, e2e against a PostgreSQL service
-container), web (lint, build, tests), model-export (re-export must leave `model/` and
-`data/` unchanged; the notebook must run) and docker (`docker compose build`).
+container), web (lint, build, tests), model-export (on `macos-latest`: re-export must
+leave `model/` and `data/` unchanged, and the notebook must run; Linux trains different
+XGBoost models because its C++ RNG differs) and docker (`docker compose build`).
 `npm run screenshots` is not in CI. Pushing workflow changes needs the gh token's
 `workflow` scope (already added). Validate the workflow locally with
 `docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:latest`.
