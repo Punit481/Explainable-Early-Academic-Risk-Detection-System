@@ -67,8 +67,8 @@ export type WhatIfField =
   | { name: string; kind: 'yesno' }
 
 export const WHAT_IF_FIELDS: WhatIfField[] = [
-  { name: 'G1', kind: 'range', min: 0, max: 20, start: 10 },
-  { name: 'G2', kind: 'range', min: 0, max: 20, start: 10, needs: 'G1' },
+  { name: 'G1', kind: 'range', min: 0, max: 20, start: 10, hint: 'Scale 0–20' },
+  { name: 'G2', kind: 'range', min: 0, max: 20, start: 10, needs: 'G1', hint: 'Scale 0–20' },
   { name: 'absences', kind: 'range', min: 0, max: 75, needs: 'G1' },
   { name: 'studytime', kind: 'range', min: 1, max: 4, hint: '1: <2h · 2: 2–5h · 3: 5–10h · 4: >10h' },
   { name: 'goout', kind: 'range', min: 1, max: 5, hint: '1: very low · 5: very high' },

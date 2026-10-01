@@ -56,10 +56,12 @@ Re-export the models from the repo root:
 conda run -n ml_project_py312 python export/export_models.py
 ```
 
-Expected output: after_period_2 accuracy 0.924 / recall 0.885 / AUC 0.961,
-after_period_1 0.81 / 0.692 / 0.923, start_of_term 0.684 / 0.423 / 0.698 (baseline
-accuracy 0.671); SHAP max difference 0.00e+00 vs the shap library; ONNX matches
-scikit-learn on 100%; 40 anomalies per stage. The env needs `shap` installed.
+Expected output (test AUC / cross-validated AUC): after_period_2 0.97 / 0.964
+(accuracy 0.924, recall 0.885), after_period_1 0.947 / 0.911, start_of_term 0.732 /
+0.617; baseline accuracy 0.671; SHAP max difference 0.00e+00 vs the shap library;
+ONNX matches scikit-learn on 100%; 40 anomalies per stage. The env needs `shap`.
+All stages use the conservative `XGB_PARAMS` (depth 2, lr 0.05, 200 trees): the
+defaults gave overconfident scores (up to 99 with no grades).
 
 ## ml-service
 

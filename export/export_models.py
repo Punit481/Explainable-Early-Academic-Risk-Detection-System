@@ -27,8 +27,8 @@ import pandas as pd
 import shap
 from skl2onnx import to_onnx
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, brier_score_loss, f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, train_test_split
 from xgboost import DMatrix, XGBClassifier
 
 DATA_PATH = "data/student-mat.csv"
@@ -49,6 +49,20 @@ STAGES = [
 ]
 
 RISK_LEVELS = {"lowMax": 30, "mediumMax": 70}
+
+# Shallow trees, learned slowly. XGBoost's defaults (depth 6) memorize this small dataset
+# and give overconfident scores (up to 99 with no grades at all); these settings had
+# better AUC and calibration (Brier score) at every stage.
+XGB_PARAMS = dict(
+    max_depth=2,
+    learning_rate=0.05,
+    n_estimators=200,
+    min_child_weight=3,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    eval_metric="logloss",
+    random_state=42,
+)
 
 # 1. Same preprocessing as the notebook
 df = pd.read_csv(DATA_PATH, sep=";")
@@ -93,11 +107,19 @@ for stage in STAGES:
 
     # 2. Train the same models as the notebook, on this stage's features
     X_stage = X_encoded[features]
-    xgb = XGBClassifier(eval_metric="logloss", random_state=42)
+    xgb = XGBClassifier(**XGB_PARAMS)
     xgb.fit(X_stage.loc[train_idx], y_train)
     prob = xgb.predict_proba(X_stage.loc[test_idx])[:, 1]
     pred = (prob >= 0.5).astype(int)
     flagged = prob * 100 > RISK_LEVELS["lowMax"]  # shown as Medium or High in the dashboard
+    # One test split of 79 students is noisy, so also cross-validate on the training part
+    cv_prob = cross_val_predict(
+        XGBClassifier(**XGB_PARAMS),
+        X_stage.loc[train_idx],
+        y_train,
+        cv=StratifiedKFold(5, shuffle=True, random_state=42),
+        method="predict_proba",
+    )[:, 1]
 
     stage_metrics = {
         "features": len(features),
@@ -106,6 +128,8 @@ for stage in STAGES:
         "recall": round(recall_score(y_test, pred), 3),
         "f1": round(f1_score(y_test, pred), 3),
         "auc": round(roc_auc_score(y_test, prob), 3),
+        "cvAuc": round(roc_auc_score(y_train, cv_prob), 3),
+        "brier": round(brier_score_loss(y_test, prob), 3),
         # Share of truly at-risk students the dashboard marks Medium or High
         "flaggedRecall": round(float(flagged[y_test.values == 1].mean()), 3),
     }

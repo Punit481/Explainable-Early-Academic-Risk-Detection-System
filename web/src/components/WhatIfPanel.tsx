@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, type Prediction, type Student, type StudentFeatures } from '../api'
-import { featureLabel, shortFeatureLabel, STAGE_LABELS, WHAT_IF_FIELDS } from '../features'
+import { shortFeatureLabel, STAGE_LABELS, WHAT_IF_FIELDS } from '../features'
 import { RiskBadge } from './RiskBadge'
 import { ShapChart } from './ShapChart'
 
@@ -70,7 +70,7 @@ export function WhatIfPanel({ student }: { student: Student }) {
           return (
             <label key={field.name} className={`block text-sm ${blocked ? 'opacity-50' : ''}`}>
               <span className="flex justify-between gap-2">
-                <span>{featureLabel(field.name)}</span>
+                <span>{shortFeatureLabel(field.name)}</span>
                 {value === undefined ? (
                   <span className="shrink-0 text-xs whitespace-nowrap text-stone-500 dark:text-stone-400">
                     not known yet
